@@ -45,7 +45,7 @@
 
 Evidence, summons and bail records you can verify
 
-**Developed by [Sai Randive](https://github.com/SAI-RANDIVE)**
+**Developed by [Apurva Sanpurkar](https://github.com/Apurva-Sanpurkar)**
 
 </div>
 
@@ -664,9 +664,9 @@ These are the questions any careful reviewer should ask; the answers are here ra
 
 ## 👤 Developer
 
-**Sai Randive** — design and development of NyaySetu: smart contracts, API, web portal, field app and documentation.
+**Apurva Sanpurkar** — design and development of NyaySetu: smart contracts, API, web portal, field app and documentation.
 
-GitHub: [@SAI-RANDIVE](https://github.com/SAI-RANDIVE)
+GitHub: [@Apurva-Sanpurkar](https://github.com/Apurva-Sanpurkar)
 
 ---
 

@@ -1,0 +1,40 @@
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# The API runs on Render. Forwarding /api through this site keeps the browser on
+# one origin, so the session cookie stays first-party and SameSite=Strict.
+# Replace the host if Render gave your API a different address.
+[[redirects]]
+  from = "/api/*"
+  to = "https://nyaysetu-api.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# Client-side routing: without this, a refresh on /judge/bail returns 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(self), camera=(self), microphone=(self)"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

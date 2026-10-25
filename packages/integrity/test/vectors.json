@@ -1,0 +1,39 @@
+{
+  "manifestInput": {
+    "source": "capture",
+    "mediaKind": "video",
+    "purpose": "search_seizure",
+    "file": {
+      "sha256": "0x9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "bytes": 734003200,
+      "mimeType": "video/webm"
+    },
+    "caseRef": "NS/PUNE-SHIVAJINAGAR/2026/000042",
+    "officerId": "8d1f5b9e-2f7a-4f5e-9b9b-1d0c4e1f7a10",
+    "deviceId": "android-5c1e77d0",
+    "appVersion": "2.0.0",
+    "platform": "android",
+    "deviceTimeMs": 1760000000000,
+    "durationMs": 1802500,
+    "gpsStart": {
+      "lat": 18.5308225,
+      "lng": 73.8474647,
+      "accuracyMetres": 6.25,
+      "altitudeMetres": 559.9,
+      "takenAtMs": 1759999999000,
+      "mocked": false
+    },
+    "gpsEnd": {
+      "lat": 18.5309114,
+      "lng": 73.8476003,
+      "accuracyMetres": 11.5,
+      "altitudeMetres": null,
+      "takenAtMs": 1760001802000,
+      "mocked": false
+    },
+    "maxAccuracyMetres": 50,
+    "nonce": "a1b2c3d4e5f60718293a4b5c6d7e8f90"
+  },
+  "canonical": "{\"appVersion\":\"2.0.0\",\"caseRef\":\"NS/PUNE-SHIVAJINAGAR/2026/000042\",\"deviceId\":\"android-5c1e77d0\",\"deviceTimeMs\":1760000000000,\"durationMs\":1802500,\"file\":{\"bytes\":734003200,\"mimeType\":\"video/webm\",\"sha256\":\"0x9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08\"},\"gps\":{\"end\":{\"accuracyCm\":1150,\"altitudeCm\":null,\"latE6\":18530911,\"lngE6\":73847600,\"mocked\":false,\"takenAtMs\":1760001802000},\"noFixReason\":null,\"start\":{\"accuracyCm\":625,\"altitudeCm\":55990,\"latE6\":18530823,\"lngE6\":73847465,\"mocked\":false,\"takenAtMs\":1759999999000},\"status\":\"OK\",\"thresholdCm\":5000},\"mediaKind\":\"video\",\"nonce\":\"a1b2c3d4e5f60718293a4b5c6d7e8f90\",\"officerId\":\"8d1f5b9e-2f7a-4f5e-9b9b-1d0c4e1f7a10\",\"platform\":\"android\",\"purpose\":\"search_seizure\",\"schema\":\"nyaysetu.capture/1\",\"source\":\"capture\"}",
+  "digest": "0x077a5de0f19070a78f3f0c4314861e456bc43d8eb0445b17685b179eb347e6c6"
+}

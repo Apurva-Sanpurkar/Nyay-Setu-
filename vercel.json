@@ -1,0 +1,122 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": [
+    "sin1"
+  ],
+  "services": {
+    "frontend": {
+      "root": "frontend/",
+      "framework": "vite",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist",
+      "rewrites": [
+        {
+          "source": "/((?!assets/).*)",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/assets/(.*)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/sw.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "key": "Service-Worker-Allowed",
+              "value": "/"
+            }
+          ]
+        }
+      ]
+    },
+    "backend": {
+      "root": "backend/",
+      "framework": "express",
+      "entrypoint": "src/vercel.ts",
+      "buildCommand": "rm -rf dist && npx tsc -p tsconfig.json --noEmit",
+      "functions": {
+        "src/vercel.ts": {
+          "maxDuration": 60,
+          "includeFiles": "src/{assets,reference,deployed}/**"
+        }
+      },
+      "bindings": [
+        {
+          "type": "service",
+          "service": "ai-service",
+          "format": "url",
+          "env": "AI_SERVICE_URL"
+        }
+      ]
+    },
+    "ai-service": {
+      "root": "ai-service/",
+      "framework": "flask",
+      "entrypoint": "app.py",
+      "buildCommand": "python train.py"
+    }
+  },
+  "daemons": {
+    "worker": {
+      "root": "backend/",
+      "entrypoint": "Dockerfile.worker",
+      "instances": {
+        "sin1": 1
+      },
+      "resources": {
+        "requests": {
+          "memory": "1Gi"
+        }
+      },
+      "terminationGracePeriodSeconds": 20
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(self), camera=(self), microphone=(self)"
+        }
+      ]
+    }
+  ]
+}

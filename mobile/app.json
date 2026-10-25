@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "NyaySetu Field",
+    "slug": "nyaysetu-field",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "nyaysetu",
+    "backgroundColor": "#f5f7fa",
+    "splash": {
+      "image": "./assets/splash.png",
+      "backgroundColor": "#f5f7fa",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "in.nyaysetu.field",
+      "infoPlist": {
+        "NSCameraUsageDescription": "NyaySetu photographs evidence at the scene. The image is hashed on this device before it is uploaded.",
+        "NSPhotoLibraryUsageDescription": "NyaySetu lets you attach an existing photograph as evidence.",
+        "NSLocationWhenInUseUsageDescription": "Evidence and bail check-ins are recorded with the coordinates where they happened, which is what the court verifies.",
+        "NSMicrophoneUsageDescription": "NyaySetu records sound with search and seizure video, so the recording is complete."
+      },
+      "icon": "./assets/icon.png"
+    },
+    "android": {
+      "package": "in.nyaysetu.field",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "NyaySetu lets you attach an existing photograph as evidence.",
+          "cameraPermission": "NyaySetu photographs evidence at the scene.",
+          "microphonePermission": "NyaySetu records sound with search and seizure video."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Evidence and bail check-ins are recorded with the coordinates where they happened."
+        }
+      ],
+      "expo-asset"
+    ],
+    "extra": {
+      "apiBaseUrl": "http://10.0.2.2:4000"
+    },
+    "icon": "./assets/icon.png",
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+metric,value,unit
+"items registered","200","count"
+"tampered files detected (one byte changed)","100.00","%"
+"genuine files confirmed (false alarms = 100 - this)","100.00","%"
+"public check latency p50 (in process)","3.3","ms"
+"public check latency p95 (in process)","4.9","ms"
+"unauthorized read attempts","258","count"
+"unauthorized read attempts blocked","100.00","%"
+"sync items","100","count"
+"sends failed by injection (RPC down)","35","count"
+"confirmed on first attempt","65.00","%"
+"confirmed after one retry pass","100.00","%"
+"items lost","0","count"

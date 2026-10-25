@@ -1,0 +1,41 @@
+{
+  "name": "nyaysetu",
+  "version": "2.0.0",
+  "private": true,
+  "description": "NyaySetu (\u0928\u094d\u092f\u093e\u092f\u0938\u0947\u0924\u0941) \u2014 blockchain-anchored evidence, summons and bail infrastructure",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "install:all": "npm --prefix contracts install && npm --prefix backend install && npm --prefix frontend install",
+    "install:mobile": "npm --prefix mobile install",
+    "contracts:build": "npm --prefix contracts run build",
+    "contracts:test": "npm --prefix contracts test",
+    "chain": "npm --prefix contracts run node",
+    "deploy:local": "npm --prefix contracts run deploy:local",
+    "deploy:sepolia": "npm --prefix contracts run deploy:sepolia",
+    "ai:train": "cd ai-service && python train.py",
+    "ai:serve": "cd ai-service && python app.py",
+    "bootstrap": "npm --prefix backend run bootstrap",
+    "api": "npm --prefix backend run dev",
+    "web": "npm --prefix frontend run dev",
+    "app": "npm --prefix mobile start",
+    "chain:check": "npm --prefix backend run chain:check",
+    "build": "npm --prefix contracts run build && npm --prefix backend run build && npm --prefix frontend run build",
+    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
+    "test": "npm --prefix contracts test",
+    "audit": "npm --prefix contracts audit --omit=dev && npm --prefix backend audit --omit=dev && npm --prefix frontend audit --omit=dev",
+    "audit:all": "npm --prefix contracts audit; npm --prefix backend audit; npm --prefix frontend audit",
+    "audit:python": "cd ai-service && python -m pip_audit -r requirements.txt",
+    "integrity:sync": "node scripts/integrity-sync.mjs",
+    "integrity:check": "node scripts/integrity-sync.mjs --check",
+    "test:integrity": "npm --prefix backend exec -- tsx --test packages/integrity/test/sha256.test.ts packages/integrity/test/manifest.test.ts packages/integrity/test/explain.test.ts packages/integrity/test/journal.test.ts",
+    "check": "npm --prefix backend run check",
+    "local": "node scripts/local-stack.mjs",
+    "db:bundle": "node scripts/bundle-upgrade.mjs",
+    "db:bundle:check": "node scripts/bundle-upgrade.mjs --check",
+    "deployment:sync": "node scripts/deployment-sync.mjs",
+    "deployment:check": "node scripts/deployment-sync.mjs --check"
+  }
+}

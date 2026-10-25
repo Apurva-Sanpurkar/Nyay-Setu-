@@ -1,0 +1,151 @@
+# ===========================================================================
+# NyaySetu :: Render blueprint  (render.com → New → Blueprint → this repository)
+#
+# Render hosts the API (and optionally the AI service). The web app is hosted
+# on Vercel or Netlify, which forward /api/* to this API, so the browser sees a
+# single site: cookies stay first-party and strict, and no CORS is needed.
+#
+# Render runs the API as a long-lived process, which the 72-hour summons window
+# and the missed-check-in sweep need: both are absences, and only a running
+# loop can notice that something did not happen.
+#
+# Values marked "sync: false" are asked for in the dashboard and never stored
+# in git. The fastest way to fill them: Environment → "Add from .env" and paste
+# the backend block of the all-in-one .env.hosting file (see docs/HOSTING.md).
+# ===========================================================================
+
+services:
+  - type: web
+    name: nyaysetu-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+      # Render supplies PORT; the app reads it.
+
+      # ---------------------------------------------------- site and proxy
+      # The web app's address, e.g. https://nyaysetu.vercel.app (no trailing slash).
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      # The web host forwards /api here: two proxies in front (web host + Render).
+      - key: TRUST_PROXY_HOPS
+        value: "2"
+      - key: COOKIE_SAMESITE
+        value: strict
+
+      # --------------------------------------------------------- required
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Never change these once data exists (tokens and encrypted files depend on them).
+      - key: AADHAAR_TOKEN_PEPPER
+        sync: false
+      - key: EVIDENCE_ENCRYPTION_KEY
+        sync: false
+      - key: EVIDENCE_ENCRYPTION_KEY_ID
+        value: v1
+      - key: LOGIN_CHALLENGE_SECRET
+        sync: false
+
+      # ------------------------------------------------------------ email
+      # Render's free plan blocks outbound SMTP, so Gmail SMTP will time out
+      # there. Use Brevo (free, 300/day) with EMAIL_TRANSPORT=brevo, or a paid
+      # plan for SMTP. Without working email set LOGIN_OTP_ENABLED=false.
+      - key: EMAIL_TRANSPORT
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: SMTP_IP_FAMILY
+        value: "4"
+      - key: BREVO_API_KEY
+        sync: false
+      - key: LOGIN_OTP_ENABLED
+        sync: false
+      - key: EMAIL_NOTIFICATIONS_ENABLED
+        value: "true"
+      - key: NOTIFY_PROVIDER
+        value: email
+
+      # ------------------------------------------------------------ chain
+      # Contract addresses come from contracts/deployed/sepolia.json in the repo.
+      - key: CHAIN_NETWORK
+        value: sepolia
+      - key: CHAIN_RPC_URL
+        sync: false
+      - key: CHAIN_PRIVATE_KEY
+        sync: false
+      - key: CHAIN_CONFIRMATIONS
+        value: "2"
+      - key: CONFIRMATION_DEPTH
+        value: "3"
+
+      # ------------------------------------------------------------- IPFS
+      # Required in practice: a free Render disk is wiped on every deploy.
+      - key: PINATA_JWT
+        sync: false
+      - key: PINATA_GATEWAY
+        value: https://gateway.pinata.cloud
+
+      # --------------------------------------------------------------- AI
+      - key: AI_SERVICE_URL
+        sync: false
+      - key: AI_SERVICE_KEY
+        sync: false
+      - key: AI_TIMEOUT_MS
+        value: "15000"
+
+      # ------------------------------------------------------------- jobs
+      - key: SCHEDULER_ENABLED
+        value: "true"
+      - key: INDEXER_ENABLED
+        value: "true"
+      - key: OTP_PROVIDER
+        value: sandbox
+      - key: OTP_ECHO_IN_RESPONSE
+        value: "false"
+
+  # ------------------------------------------------------------------------
+  # The AI service (optional). Python, so it cannot share the Node runtime.
+  # Models are trained at build time from train.py with a fixed seed.
+  # ------------------------------------------------------------------------
+  - type: web
+    name: nyaysetu-ai
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: ai-service
+    buildCommand: pip install -r requirements.txt && python train.py
+    startCommand: python serve.py
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      # Must equal AI_SERVICE_KEY on the API service.
+      - key: AI_SERVICE_KEY
+        sync: false
+      - key: ANOMALY_SCORE_THRESHOLD
+        value: "0.62"
+      - key: WEB_THREADS
+        value: "4"

@@ -1,0 +1,20 @@
+# NyaySetu AI service
+# Python 3.10+ (tested on 3.13)
+#
+#   python -m venv .venv
+#   .venv\Scripts\activate        (Windows)
+#   source .venv/bin/activate     (macOS / Linux)
+#   pip install -r requirements.txt
+#   python train.py
+#   python app.py
+
+flask>=3.0,<4
+scikit-learn>=1.5,<2
+numpy>=1.26
+pandas>=2.2
+joblib>=1.4
+python-dotenv>=1.0
+
+# Production WSGI server. waitress rather than gunicorn because it runs on
+# Windows as well as Linux, so the deploy command is the same everywhere.
+waitress>=3.0

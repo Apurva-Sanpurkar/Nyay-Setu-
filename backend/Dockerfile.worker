@@ -1,0 +1,21 @@
+# NyaySetu background worker (Vercel Daemon `worker`).
+# Runs src/worker.ts: the chain event indexer and the scheduler, no HTTP.
+# Build context: backend/ (it carries its own copy of the contract deployment
+# in src/deployed and of the integrity package in src/shared).
+FROM node:22-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --include=dev --no-audit --no-fund
+COPY tsconfig.json ./
+COPY scripts ./scripts
+COPY src ./src
+RUN npm run build
+
+FROM node:22-slim
+ENV NODE_ENV=production
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
+COPY --from=build /app/dist ./dist
+USER node
+CMD ["node", "dist/worker.js"]

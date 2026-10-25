@@ -1,0 +1,168 @@
+/* ==========================================================================
+   NyaySetu design tokens
+   ==========================================================================
+
+   LIGHT IS THE DEFAULT, WHATEVER THE OPERATING SYSTEM SAYS
+   --------------------------------------------------------
+   :root carries the light palette. The dark palette applies only when
+   <html data-theme="dark"> is set, which happens only when a person chooses it
+   from the theme switch. prefers-color-scheme is deliberately not consulted: a
+   court portal should look the same on the registry's PC and an officer's
+   phone, and a first visit is always light.
+
+   THE PALETTE
+   -----------
+   Emerald for integrity and "confirmed", saffron for attention, indigo for
+   information, a true red for problems — each measured against every surface it
+   sits on. scripts/checkContrast.mjs reads this file and fails the build if a
+   text/background pair drops below WCAG AA (4.5:1) in either theme.
+
+   Colour never carries meaning alone: every state chip has an icon and a word.
+   ========================================================================== */
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* ---------------------------------------------------------------- brand */
+  --brand-green: #009245;
+  --brand-orange: #ff751f;
+  --brand-emerald: #059669;
+  --brand-teal: #0d9488;
+  --brand-saffron: #f97316;
+
+  /* canvas and surfaces: a soft, cool daylight */
+  --bg: #f5f7fa;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-3: #e2e8f0;
+  --sidebar: #ffffff;
+
+  /* lines */
+  --border: rgba(15, 27, 45, 0.09);
+  --border-strong: rgba(15, 27, 45, 0.18);
+
+  /* type */
+  --text: #0f1b2d;
+  --text-muted: #475569;
+  --text-faint: #5b6b80;
+
+  /* emerald: 6.6:1 on white as text, 6.6:1 under white as a fill */
+  --primary: #04694c;
+  --primary-strong: #034e39;
+  --primary-fill: #04694c;
+  --primary-soft: rgba(5, 150, 105, 0.1);
+  --primary-ring: rgba(5, 150, 105, 0.32);
+  --primary-glow: rgba(5, 150, 105, 0.18);
+  --on-primary: #ffffff;
+
+  /* saffron: the attention colour */
+  --accent: #a93a0a;
+  --accent-strong: #8a2f07;
+  --accent-fill: #a93a0a;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(249, 115, 22, 0.12);
+  --accent-ring: rgba(249, 115, 22, 0.34);
+
+  /* semantic */
+  --success: #04694c;
+  --success-soft: rgba(5, 150, 105, 0.1);
+  --warning: #8a4b00;
+  --warning-soft: rgba(217, 119, 6, 0.12);
+  --danger: #b91c1c;
+  --danger-soft: rgba(220, 38, 38, 0.1);
+  --info: #4338ca;
+  --info-soft: rgba(79, 70, 229, 0.1);
+
+  /* depth: soft and wide, never muddy */
+  --shadow-soft: rgba(15, 27, 45, 0.05);
+  --shadow-deep: rgba(15, 27, 45, 0.08);
+
+  /* emerald → teal → saffron */
+  --grad-brand: linear-gradient(135deg, #059669 0%, #0d9488 46%, #f97316 100%);
+  --grad-hero:
+    radial-gradient(1200px 520px at 8% -10%, rgba(16, 185, 129, 0.16), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, rgba(249, 115, 22, 0.13), transparent 60%),
+    radial-gradient(800px 600px at 50% 120%, rgba(79, 70, 229, 0.08), transparent 60%);
+
+  /* landing page chrome */
+  --nav-pill: #ffffff;
+  --nav-text: #0f1b2d;
+  --pill-dark: #0f1b2d;
+  --sign-in-text: #0f1b2d;
+  --nav-shadow: 0 6px 24px rgba(15, 27, 45, 0.08);
+  --trust-bg: #ffffff;
+  --trust-border: rgba(15, 27, 45, 0.1);
+  --trust-text: #475569;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --brand-green: #009245;
+  --brand-orange: #ff751f;
+  --brand-emerald: #10b981;
+  --brand-teal: #14b8a6;
+  --brand-saffron: #fb923c;
+
+  --bg: #07130e;
+  --bg-elevated: #0a1912;
+  --surface: #0c1d15;
+  --surface-2: #10251b;
+  --surface-3: #152e22;
+  --sidebar: #0a1912;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+
+  --text: #eef5f0;
+  --text-muted: #a3b5aa;
+  --text-faint: #879a8e;
+
+  --primary: #34d399;
+  --primary-strong: #6ee7b7;
+  --primary-fill: #047857;
+  --primary-soft: rgba(52, 211, 153, 0.13);
+  --primary-ring: rgba(52, 211, 153, 0.34);
+  --primary-glow: rgba(16, 185, 129, 0.25);
+  --on-primary: #ffffff;
+
+  --accent: #fb923c;
+  --accent-strong: #fdba74;
+  --accent-fill: #c2410c;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(251, 146, 60, 0.14);
+  --accent-ring: rgba(251, 146, 60, 0.36);
+
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.13);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+  --info: #a5b4fc;
+  --info-soft: rgba(165, 180, 252, 0.14);
+
+  --shadow-soft: rgba(0, 0, 0, 0.45);
+  --shadow-deep: rgba(0, 0, 0, 0.4);
+
+  --grad-brand: linear-gradient(135deg, #10b981 0%, #14b8a6 46%, #fb923c 100%);
+  --grad-hero:
+    radial-gradient(1200px 520px at 8% -10%, rgba(16, 185, 129, 0.18), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, rgba(249, 115, 22, 0.14), transparent 60%);
+
+  --nav-pill: #10251b;
+  --nav-text: #eef5f0;
+  --pill-dark: #eef5f0;
+  --sign-in-text: #eef5f0;
+  --nav-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  --trust-bg: #0c1d15;
+  --trust-border: rgba(255, 255, 255, 0.12);
+  --trust-text: #a3b5aa;
+}
+
+/* Large-text mode (Jan-Sahayak, F6): scales every rem-based size by 1.2. */
+:root[data-text-size="large"] {
+  font-size: 120%;
+}

@@ -1,0 +1,81 @@
+# ---------------------------------------------------------------- secrets
+# Nothing here is negotiable. .env files carry the Aadhaar pepper, the evidence
+# encryption key, the Supabase service role key and a wallet private key.
+.env
+.env.*
+!.env.example
+!.env.hosting.example
+*.pem
+*.key
+!**/public/**/*.key
+
+# --------------------------------------------------------------- node
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------------------------------------------ contracts
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/coverage/
+contracts/coverage.json
+# Deployment artefacts for real networks ARE committed: the addresses and ABIs
+# are part of the record. Throwaway local ones are not.
+contracts/deployed/localhost.json
+contracts/deployed/hardhat.json
+contracts/deployed/latest.json
+
+# ------------------------------------------------------------- backend
+# Encrypted evidence blobs written when Pinata is not configured.
+backend/storage/
+
+# ------------------------------------------------------------ ai-service
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.ipynb_checkpoints/
+# Trained models are reproducible from train.py with a fixed seed, so there is
+# no reason to carry ~10 MB of joblib in git.
+ai-service/models/*.joblib
+ai-service/models/metadata.json
+
+# ------------------------------------------------------------- mobile
+.expo/
+.expo-shared/
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+*.orig.*
+web-build/
+
+# ---------------------------------------------------------------- editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# ------------------------------------------------------------------- os
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Reference material, not project assets. The example charge sheet in brand/ came
+# from a mock trial competition and belongs to whoever wrote it; the format it
+# demonstrates is reproduced in code, the document itself is not redistributed.
+brand/*.pdf
+backend/test/.blobs/
+backend/storage/local-stack/
+
+.vercel
+.env*

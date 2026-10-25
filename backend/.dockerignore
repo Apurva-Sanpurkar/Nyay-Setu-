@@ -1,0 +1,11 @@
+# Only what the Dockerfile copies is needed. Everything here would either bloat
+# the context or, in the case of .env, bake secrets into an image layer.
+node_modules
+dist
+.env
+.env.*
+!.env.example
+storage
+*.log
+npm-debug.log*
+.DS_Store

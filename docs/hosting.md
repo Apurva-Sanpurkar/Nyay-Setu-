@@ -17,7 +17,7 @@ defaults to the production address.
 
 **Steps**
 
-1. Database: migrations 001–013 applied (`database/upgrade_2_0.sql` covers 008–013 for an existing 1.0 database).
+1. Database: migrations 001–014 applied (`database/upgrade_2_0.sql` covers 008–014 for an existing 1.0 database; an existing 2.0 database needs only `014_smart_policing.sql`).
 2. `vercel login`, then from the repository root `vercel link --yes --project nyaysetu`
    (this also connects the GitHub repository, so every push to `main` deploys).
 3. Add the environment variables to **Production** — paste `.env.hosting` into

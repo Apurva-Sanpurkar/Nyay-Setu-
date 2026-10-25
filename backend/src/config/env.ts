@@ -132,6 +132,13 @@ const schema = z.object({
   AI_SERVICE_KEY: optionalString,
   AI_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
 
+  // ---------------------------------------------------- smart policing (014)
+  // Server-side number plate recognition (platerecognizer.com). Optional: with
+  // no token the web app reads plates on the officer's device instead, and the
+  // officer always confirms or corrects what was read.
+  PLATE_RECOGNIZER_TOKEN: optionalString,
+  PLATE_RECOGNIZER_URL: z.string().url().default("https://api.platerecognizer.com/v1/plate-reader/"),
+
   // --------------------------------------------------------------------- OTP
   OTP_PROVIDER: z.enum(["sandbox", "uidai"]).default("sandbox"),
   OTP_TTL_SECONDS: z.coerce.number().int().positive().default(300),
@@ -387,6 +394,7 @@ export const capabilities = {
   chain: Boolean(raw.CHAIN_RPC_URL && raw.CHAIN_PRIVATE_KEY),
   ipfs: Boolean(raw.PINATA_JWT || (raw.PINATA_API_KEY && raw.PINATA_API_SECRET)),
   ai: Boolean(raw.AI_SERVICE_URL),
+  serverAnpr: Boolean(raw.PLATE_RECOGNIZER_TOKEN),
   smtp: smtpConfigured,
   /** "resend", "brevo", or "smtp" when sending over SMTP, or null when it cannot send. */
   emailTransport: emailConfigured ? (httpMailProvider ?? "smtp") : null,

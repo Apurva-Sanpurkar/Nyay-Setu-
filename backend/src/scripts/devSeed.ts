@@ -16,6 +16,9 @@ import { logger } from "../lib/logger";
 
 const ROLES = [
   { role: "police", name: "Inspector Asha Kulkarni", designation: "Police Inspector", place: "Shivajinagar PS" },
+  // Two more stations, so Vehicle Trace and Third Eye have someone to alert.
+  { role: "police", name: "PSI Vikram Jadhav", designation: "Police Sub-Inspector", place: "Kothrud PS" },
+  { role: "police", name: "API Farah Inamdar", designation: "Assistant Police Inspector", place: "Hinjewadi PS" },
   { role: "forensic_lab", name: "Dr. Rohan Mehta", designation: "Assistant Director, RFSL", place: "Regional Forensic Science Laboratory, Pune" },
   { role: "prosecutor", name: "Adv. Neha Joshi", designation: "Assistant Public Prosecutor", place: "District Court, Pune" },
   { role: "judge", name: "Hon. S. R. Deshpande", designation: "Judicial Magistrate First Class", place: "JMFC Court, Pune" },
@@ -57,7 +60,8 @@ export async function seedMemoryDatabase(): Promise<void> {
   const lines: string[] = [];
   for (const entry of ROLES) {
     const id = randomUUID();
-    const email = `${entry.role.replace("_", ".")}@nyaysetu.local`;
+    const station = entry.role === "police" && entry.place !== "Shivajinagar PS" ? `.${entry.place.split(" ")[0].toLowerCase()}` : "";
+    const email = `${entry.role.replace("_", ".")}${station}@nyaysetu.local`;
     db.table("users").push({
       id,
       email,
@@ -77,6 +81,15 @@ export async function seedMemoryDatabase(): Promise<void> {
     db.table("user_pii").push({ user_id: id, aadhaar_token: aadhaarToken(fakeAadhaar()), aadhaar_last4: "0000" });
     lines.push(`    ${entry.role.padEnd(15)} ${email}`);
   }
+
+  // Synthetic Vehicle Trace and Third Eye records, written through the services.
+  const officers = db
+    .table("users")
+    .filter((u) => u.role === "police")
+    .map((u) => ({ id: u.id, email: u.email, fullName: u.full_name, role: "police" as const, designation: u.designation, stationOrCourt: u.station_or_court, theme: "light" as const, aadhaarToken: null, mustChangePassword: false }));
+  const { seedSmartDemo } = await import("./smartDemo");
+  const demo = await seedSmartDemo(officers);
+  lines.push(`    (demo data: ${demo.vehicles} vehicle reports, ${demo.persons} Third Eye records — all synthetic)`);
 
   logger.info("Local stack seeded (memory database, discarded on restart)");
   // Printed directly, once: this is a local, throwaway database.

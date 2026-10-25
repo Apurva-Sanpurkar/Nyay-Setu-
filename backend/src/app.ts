@@ -28,6 +28,9 @@ import labRoutes from "./routes/lab";
 import alertRoutes from "./routes/alerts";
 import governanceRoutes from "./routes/governance";
 import courtRoutes from "./routes/court";
+import vehicleRoutes from "./routes/vehicles";
+import thirdEyeRoutes from "./routes/thirdEye";
+import smartRoutes from "./routes/smart";
 
 /**
  * The Express application, without a listening socket or background jobs, so the
@@ -115,6 +118,10 @@ app.use("/api/lab", requirePasswordSettled, labRoutes);
 app.use("/api/alerts", requirePasswordSettled, alertRoutes);
 app.use("/api/governance", requirePasswordSettled, governanceRoutes);
 app.use("/api/court", requirePasswordSettled, courtRoutes);
+// Smart policing (014): cross-station modules for the police dashboard.
+app.use("/api/vehicles", requirePasswordSettled, vehicleRoutes);
+app.use("/api/third-eye", requirePasswordSettled, thirdEyeRoutes);
+app.use("/api/smart", requirePasswordSettled, smartRoutes);
 
 app.get("/", (_req, res) => {
   res.json({
@@ -124,6 +131,8 @@ app.get("/", (_req, res) => {
       SaakshyaSetu: "/api/evidence",
       SammansSetu: "/api/summons",
       JaminSetu: "/api/bail",
+      VehicleTrace: "/api/vehicles",
+      ThirdEye: "/api/third-eye",
     },
     health: "/api/health",
   });

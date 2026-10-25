@@ -43,6 +43,9 @@ const UNIQUE: Record<string, string[][]> = {
   document_templates: [["template_key"]],
   discrepancy_alerts: [["dedupe_key"]],
   notification_outbox: [["dedupe_key"]],
+  station_alerts: [["dedupe_key"]],
+  vehicle_matches: [["missing_report_id", "found_report_id"]],
+  ti_leads: [["kind", "subject_a", "subject_b"]],
 };
 
 const PRIMARY_KEY: Record<string, string> = { indexer_state: "contract", user_pii: "user_id" };

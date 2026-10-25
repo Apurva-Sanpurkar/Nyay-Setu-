@@ -52,6 +52,12 @@ const AccusedHelpPage = lazyNamed(() => import("./pages/court"), "AccusedHelpPag
 const ApprovalsPage = lazyNamed(() => import("./pages/court"), "ApprovalsPage");
 const HearingsPage = lazyNamed(() => import("./pages/court"), "HearingsPage");
 const TemplatesPage = lazyNamed(() => import("./pages/templates"), "TemplatesPage");
+const VehicleTracePage = lazyNamed(() => import("./pages/vehicleTrace"), "VehicleTracePage");
+const VehicleReportPage = lazyNamed(() => import("./pages/vehicleTrace"), "VehicleReportPage");
+const ThirdEyePage = lazyNamed(() => import("./pages/thirdEye"), "ThirdEyePage");
+const PersonRecordPage = lazyNamed(() => import("./pages/thirdEye"), "PersonRecordPage");
+const StationAlertsPage = lazyNamed(() => import("./pages/smartPolicing"), "StationAlertsPage");
+const SmartAnalyticsPage = lazyNamed(() => import("./pages/smartPolicing"), "SmartAnalyticsPage");
 
 /**
  * Routing.
@@ -185,6 +191,14 @@ const WORKFLOW_PAGES: { path: string; roles: Role[]; element: React.ReactNode }[
   { path: "/police/seizures", roles: ["police"], element: <SeizuresPage /> },
   { path: "/police/malkhana", roles: ["police"], element: <MalkhanaPage /> },
   { path: "/police/alerts", roles: ["police"], element: <AlertsPage /> },
+  // Smart policing (014): Vehicle Trace, Third Eye, inter-station alerts.
+  { path: "/police/vehicles", roles: ["police"], element: <VehicleTracePage /> },
+  { path: "/police/vehicles/:id", roles: ["police"], element: <VehicleReportPage /> },
+  { path: "/police/third-eye", roles: ["police"], element: <ThirdEyePage /> },
+  { path: "/police/third-eye/:id", roles: ["police"], element: <PersonRecordPage /> },
+  { path: "/police/station-alerts", roles: ["police"], element: <StationAlertsPage /> },
+  { path: "/police/analytics", roles: ["police"], element: <SmartAnalyticsPage /> },
+  { path: "/admin/smart-policing", roles: ["court_admin"], element: <SmartAnalyticsPage /> },
   { path: "/prosecutor/alerts", roles: ["prosecutor"], element: <AlertsPage /> },
   { path: "/judge/alerts", roles: ["judge"], element: <AlertsPage /> },
   { path: "/admin/alerts", roles: ["court_admin"], element: <AlertsPage /> },

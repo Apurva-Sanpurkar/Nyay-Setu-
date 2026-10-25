@@ -10,6 +10,7 @@ Five guides. Which one you want depends on what you are trying to do.
 | Know the per-service environment variables and deploy order | [deployment.md](deployment.md) |
 | Understand why it is built this way, and defend it | [design-decisions.md](design-decisions.md) |
 | Harden it for something real | [production.md](production.md) |
+| Understand Vehicle Trace and Third Eye, and their safeguards | [SMART_POLICING.md](SMART_POLICING.md) |
 
 There is also a **[Handbook](../README.md#the-handbook)** inside the app itself, at
 `/handbook`, with no sign-in required. That one is written for the people who will

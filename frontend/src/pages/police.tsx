@@ -12,6 +12,7 @@ import { Button, Card, Field, Input, LinkButton, PageHeader, Select, Textarea } 
 import { SectionPicker } from "../components/SectionPicker";
 import { StatusChip } from "../components/trust";
 import { VerificationBadge } from "../components/verification";
+import { SmartPolicingPanel } from "../components/SmartPolicingPanel";
 
 /* ================================================== shared summary ======= */
 
@@ -90,6 +91,8 @@ export function PoliceDashboard() {
           </>
         }
       />
+
+      <SmartPolicingPanel />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         {(

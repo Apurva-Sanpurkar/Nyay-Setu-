@@ -78,6 +78,18 @@ export const en = {
   "nav.chain": "Chain status",
   "nav.templates": "Templates",
   "nav.courtDashboard": "Court dashboard",
+  "nav.vehicleTrace": "Vehicle Trace",
+  "nav.thirdEye": "Third Eye",
+  "nav.stationAlerts": "Station alerts",
+  "nav.analytics": "Reports & analytics",
+  "vt.title": "Lost, stolen and found vehicles",
+  "vt.intro": "Report a missing or found vehicle, read its number plate from a photograph, and let every station's open complaints be checked at once. A likely match alerts the station that holds the complaint; an officer verifies it before anything else happens.",
+  "te.title": "Criminal intelligence and case linking",
+  "te.intro": "Records of suspects, accused and convicted persons with their FIRs across stations. Third Eye raises leads — possible duplicates, the same image on two records, cases with a similar modus operandi — for an investigator to verify. It never identifies anyone on its own.",
+  "sa.title": "Alerts from other stations",
+  "sa.intro": "Vehicle matches and case links that concern {station}.",
+  "an.title": "Smart policing overview",
+  "an.intro": "Vehicle recovery and criminal intelligence across stations, with the Third Eye activity log for oversight.",
 
   /* ------------------------------------------------------------- roles */
   "role.police": "Police",

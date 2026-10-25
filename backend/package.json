@@ -21,6 +21,7 @@
     "chain:check": "tsx src/scripts/chainCheck.ts",
     "check": "tsx src/scripts/connectionCheck.ts",
     "mail:probe": "tsx src/scripts/mailProbe.ts",
+    "demo:smart": "tsx src/scripts/smartDemo.ts",
     "test": "tsx --test --test-concurrency=1 test/*.test.ts",
     "db:validate": "node scripts/validateMigrations.mjs",
     "metrics": "tsx test/metrics/run.ts",

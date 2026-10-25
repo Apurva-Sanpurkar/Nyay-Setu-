@@ -187,6 +187,12 @@ Three places in a criminal matter where the record is only as good as somebody's
 
 **JaminSetu** (`BailChain.sol`) — bail conditions as code, geo-fenced check-ins, automatic violation detection, live compliance scoring.
 
+### Smart policing modules (Police Dashboard)
+
+**Vehicle Trace** — lost, stolen, found and abandoned vehicles across police stations. Number plates are read from a photograph (on the officer's device, or by a plate recognition service when configured) and confirmed by the officer; every open complaint at every station is checked at once, by exact number, by common misreads (B/8, O/0), by partial plate and by chassis number. A likely match alerts the station holding the complaint with the photographs, the location and a Google Maps link. The recovery workflow (found → match verified → recovery → owner verification → returned → closed) moves only on an officer's written decision, and each step is anchored on chain as a digest.
+
+**Third Eye** — criminal intelligence records: suspects, accused and convicted persons kept visibly distinct, with their FIRs across stations. It raises *leads* — possible duplicate records, the same photograph on two records, cases with a similar modus operandi at different stations — which an investigator confirms or rejects in writing. Every search states its purpose and is audited. It does **not** perform facial recognition or sketch-to-photo matching; see [docs/SMART_POLICING.md](docs/SMART_POLICING.md) for why, and for the safeguards.
+
 ---
 
 ## 📁 Repository layout
@@ -404,13 +410,15 @@ database/migrations/009_verification_state.sql 2.0: anchors and the verification
 database/migrations/010_passport_capture.sql   2.0: public references, capture manifests, device keys
 database/migrations/011_chunked_uploads.sql    2.0: resumable uploads
 database/migrations/012_workflows.sql          2.0: seizures, malkhana, lab, court, governance, alerts
+database/migrations/013_upload_staging.sql     2.0: private bucket for resumable uploads
+database/migrations/014_smart_policing.sql     Vehicle Trace and Third Eye
 database/seed/reference.sql                    role reference rows
 ```
 
 Every 2.0 migration is idempotent and only adds; none drops or rewrites data.
 `cd backend && npm run db:validate` applies all of them to a throwaway
 in-process Postgres (PGlite) and checks RLS and audit triggers on every table,
-without touching Supabase. Until 008–012 are applied, `/api/health` lists them
+without touching Supabase. Until 008–014 are applied, `/api/health` lists them
 under `database.schema.missingMigrations` and the features they add answer
 `SCHEMA_OUT_OF_DATE`.
 
@@ -632,6 +640,10 @@ These are the questions any careful reviewer should ask; the answers are here ra
 
 **The field app does not sign captures with a device key yet.** The web client registers a non-extractable device key and signs manifests; the mobile app sends manifests unsigned, and its Expo build tooling carries advisories that need an SDK upgrade (see `docs/SECURITY.md`).
 
+**Third Eye does not recognise faces, and says so.** Its image matching is a perceptual hash computed on the officer's device: it finds the *same picture* filed against two records, not the same face in two different pictures. Facial recognition and sketch-to-photograph matching are deliberately absent until a validated method, legal authorisation and a review protocol exist. Every result is labelled a lead, needs a written human decision, and never changes anyone's standing on its own.
+
+**Vehicle Trace has no access to VAHAN or CCTNS.** It matches only the reports officers file in NyaySetu. Integrating the national vehicle registry or the crime and criminal tracking network needs authorisation and approved APIs; the matching service is written so such a source can be added as another candidate list.
+
 **RLS does not constrain the API.** Supabase's service role bypasses row level security by design, so the policies in `002_rls.sql` do not police API traffic — the RBAC middleware does. RLS is the second wall, and it is what stands between a leaked anon key and the contents of these tables. Every table has it on; see `docs/design-decisions.md`.
 
 ---
@@ -640,6 +652,7 @@ These are the questions any careful reviewer should ask; the answers are here ra
 
 - **[`docs/`](docs/)** — all the guides, with an index that says which one you want
 - **`docs/hosting.md`** — deploy the API to Render and the web app to Vercel or Netlify, with one all-in-one env file
+- **`docs/SMART_POLICING.md`** — Vehicle Trace and Third Eye: architecture, data model, API, safeguards, legal considerations and the demo script
 - **`docs/TESTING.md`** — every automated check, and a step-by-step walkthrough for each role
 - **`docs/samples/`** — one of every generated court document (seizure memo, custody record, Section 63 certificate, passports, final report)
 - **`docs/STORY.md`** — why this exists and what 2.0 changes, in plain words

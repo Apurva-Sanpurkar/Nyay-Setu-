@@ -4,6 +4,7 @@ import { env, capabilities } from "../config/env";
 import { logger } from "./logger";
 import { encryptBuffer, decryptBuffer, EncryptedBlob } from "./crypto";
 import { AppError, notFound } from "./errors";
+import { db } from "./supabase";
 
 /**
  * Evidence file storage.
@@ -25,7 +26,7 @@ export interface StoredBlob {
   tag: string;
   keyId: string;
   bytes: number;
-  backend: "pinata" | "local";
+  backend: "pinata" | "supabase" | "local";
 }
 
 const PINATA_PIN_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
@@ -112,41 +113,78 @@ async function fetchFromPinata(cid: string): Promise<Buffer> {
   return Buffer.from(await response.arrayBuffer());
 }
 
+/**
+ * Where evidence goes when Pinata is not configured or does not take it: a
+ * private Supabase Storage bucket on a real database (it survives serverless
+ * instances and restarts), or a local directory on the in-memory test database.
+ * Only ciphertext is ever written, so the fallback is as safe as IPFS.
+ */
+export const VAULT_BUCKET = "evidence-vault";
+let vaultReady = false;
+
+async function storeFallback(ciphertext: Buffer, reason: string): Promise<{ cid: string; backend: "supabase" | "local" }> {
+  const { createHash } = await import("crypto");
+  const digest = createHash("sha256").update(ciphertext).digest("hex");
+
+  if (process.env.NYAY_DB !== "memory") {
+    const cid = `sb-${digest}`;
+    if (!vaultReady) {
+      // Created on first use, private, no policies: only the service role reaches it.
+      const { error } = await db.storage.createBucket(VAULT_BUCKET, { public: false });
+      if (error && !/already exists|duplicate/i.test(error.message)) {
+        logger.error("Could not create the evidence vault bucket", { error: error.message });
+      }
+      vaultReady = true;
+    }
+    const { error } = await db.storage
+      .from(VAULT_BUCKET)
+      .upload(`${cid}.bin`, ciphertext, { contentType: "application/octet-stream", upsert: true });
+    if (error) {
+      logger.error("Evidence vault upload failed", { error: error.message, reason });
+      throw new AppError(
+        503,
+        "STORAGE_UNAVAILABLE",
+        `${reason} The backup store (Supabase Storage) also refused it: ${error.message}. Nothing was registered.`
+      );
+    }
+    logger.warn("Stored encrypted evidence in the Supabase vault", { cid, reason });
+    return { cid, backend: "supabase" };
+  }
+
+  const cid = `local-${digest}`;
+  fs.mkdirSync(env.localBlobDir, { recursive: true });
+  fs.writeFileSync(localPath(cid), ciphertext);
+  logger.warn("Stored evidence locally", { cid, reason });
+  return { cid, backend: "local" };
+}
+
 /** Encrypts, then stores. Returns everything needed to get the bytes back. */
 export async function storeEncrypted(plaintext: Buffer, fileName: string): Promise<StoredBlob> {
   const blob = encryptBuffer(plaintext);
-
-  if (capabilities.ipfs) {
-    const cid = await pinToPinata(blob, fileName);
-    logger.info("Pinned encrypted evidence to IPFS", { cid, bytes: blob.ciphertext.length });
-    return {
-      cid,
-      iv: blob.iv,
-      tag: blob.tag,
-      keyId: blob.keyId,
-      bytes: blob.ciphertext.length,
-      backend: "pinata",
-    };
-  }
-
-  // Local fallback. The "CID" is the digest of the ciphertext, so it is still
-  // content-addressed and still stable.
-  const { createHash } = await import("crypto");
-  const digest = createHash("sha256").update(blob.ciphertext).digest("hex");
-  const cid = `local-${digest}`;
-
-  fs.mkdirSync(env.localBlobDir, { recursive: true });
-  fs.writeFileSync(localPath(cid), blob.ciphertext);
-  logger.warn("Stored evidence locally; Pinata is not configured", { cid });
-
-  return {
-    cid,
+  const stored = (location: { cid: string; backend: StoredBlob["backend"] }): StoredBlob => ({
+    ...location,
     iv: blob.iv,
     tag: blob.tag,
     keyId: blob.keyId,
     bytes: blob.ciphertext.length,
-    backend: "local",
-  };
+  });
+
+  if (capabilities.ipfs) {
+    try {
+      const cid = await pinToPinata(blob, fileName);
+      logger.info("Pinned encrypted evidence to IPFS", { cid, bytes: blob.ciphertext.length });
+      return stored({ cid, backend: "pinata" });
+    } catch (error) {
+      // A Pinata outage, a quota or a revoked key must not stop an officer
+      // registering evidence at the scene. The failure is logged loudly (with
+      // Pinata's own reply, above) and the ciphertext goes to the vault.
+      const reason = error instanceof Error ? error.message : "Pinata failed.";
+      logger.error("Pinata did not take the evidence; using the backup store", { reason });
+      return stored(await storeFallback(blob.ciphertext, reason));
+    }
+  }
+
+  return stored(await storeFallback(blob.ciphertext, "Pinata is not configured."));
 }
 
 /** Fetches and decrypts. Throws if the auth tag fails, which means tampering. */
@@ -157,6 +195,10 @@ export async function loadDecrypted(cid: string, iv: string, tag: string): Promi
     const file = localPath(cid);
     if (!fs.existsSync(file)) throw notFound("Stored evidence file");
     ciphertext = fs.readFileSync(file);
+  } else if (cid.startsWith("sb-")) {
+    const { data, error } = await db.storage.from(VAULT_BUCKET).download(`${cid.replace(/[^A-Za-z0-9_.-]/g, "")}.bin`);
+    if (error || !data) throw notFound("Stored evidence file");
+    ciphertext = Buffer.from(await data.arrayBuffer());
   } else {
     ciphertext = await fetchFromPinata(cid);
   }

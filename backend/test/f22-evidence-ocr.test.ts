@@ -204,3 +204,34 @@ test("a database that cannot be reached, or refuses the key, is explained instea
     server.close();
   }
 });
+
+test("Pinata failing does not stop registration: the ciphertext goes to the backup store", async () => {
+  const { capabilities } = await import("../src/config/env");
+  const realFetch = globalThis.fetch;
+  const saved = { ipfs: capabilities.ipfs, jwt: env.PINATA_JWT };
+  let pinataCalls = 0;
+  (capabilities as any).ipfs = true;
+  (env as any).PINATA_JWT = "test-jwt";
+  globalThis.fetch = (async (input: any, init?: any) => {
+    if (String(input).includes("api.pinata.cloud")) {
+      pinataCalls++;
+      return new Response("Internal Server Error", { status: 500 });
+    }
+    return realFetch(input, init);
+  }) as typeof fetch;
+  try {
+    const { response, bytes } = await uploadEvidence(police, kase.id);
+    assert.equal(response.status, 201, JSON.stringify(response.body));
+    assert.equal(pinataCalls, 1);
+    const row = mem.table("evidence_items").find((e) => e.id === response.body.evidence.id)!;
+    assert.match(row.ipfs_cid, /^local-/, "the in-memory database falls back to local disk; a real one to the Supabase vault");
+    // And it reads back intact.
+    const file = await call(police, "POST", `/api/evidence/${row.id}/ocr`);
+    assert.equal(file.status, 201, JSON.stringify(file.body));
+    assert.equal(file.body.reading.proof.inputSha256, sha(bytes));
+  } finally {
+    globalThis.fetch = realFetch;
+    (capabilities as any).ipfs = saved.ipfs;
+    (env as any).PINATA_JWT = saved.jwt;
+  }
+});

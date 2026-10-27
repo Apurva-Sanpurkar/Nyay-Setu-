@@ -79,12 +79,16 @@ free-text description.
 ### Number plate recognition (ANPR)
 1. If `PLATE_RECOGNIZER_TOKEN` is set, `POST /api/vehicles/anpr` sends the image to
    Plate Recognizer (region `in`) and returns candidates.
-2. Otherwise the API answers `501 ANPR_ON_DEVICE` and the app runs **Tesseract.js** in the
-   browser (lazy-loaded; nobody else downloads it), on an upscaled, high-contrast copy.
-3. Raw text is fitted to Indian formats (`MH12AB1234`, `DL3CAB1234`, `22BH1234AA`) with
+2. Otherwise, if `AI_SERVICE_URL` is set, the NyaySetu plate reader in the AI service
+   (`ai-service/src/ocr.py`) locates the plate, reads up to three crops in several prepared
+   variants, and returns candidates with a proof digest.
+3. If neither is available the API answers `501 ANPR_ON_DEVICE` and the app runs **Tesseract.js**
+   in the browser (lazy-loaded; nobody else downloads it), on an upscaled, high-contrast copy.
+4. Raw text is fitted to Indian formats (`MH12AB1234`, `DL3CAB1234`, `22BH1234AA`) with
    position-aware corrections (a `0` where a letter must be is `O`, an `8` is `B`), and only
-   valid state codes are accepted.
-4. The officer confirms or corrects. The report records `manual`, `anpr` or `anpr_corrected`.
+   valid state codes are accepted. A format that leaves read characters unused is ranked down,
+   so `MHI2A8I234` reads as `MH12AB1234`, not the shorter `MH12A8123`.
+5. The officer confirms or corrects. The report records `manual`, `anpr` or `anpr_corrected`.
 
 ### Matching (`scorePair`, `comparePlates` in `lib/similarity.ts`)
 | Signal | Type | Score |

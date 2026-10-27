@@ -10,13 +10,21 @@ export class AppError extends Error {
   readonly details?: unknown;
   readonly expose: boolean;
 
-  constructor(status: number, code: string, message: string, details?: unknown) {
+  /**
+   * expose: whether the message may reach the client. Anything below 500 is the
+   * client's own doing and always is. Of the 5xx family, 501 and 503 are raised
+   * with messages written for a person ("the database could not be reached",
+   * "run migration 014") and are shown too; a 500 or 502 is shown only when the
+   * code that raised it says so. A 5xx never sends its details, which is where
+   * driver and Postgres internals end up.
+   */
+  constructor(status: number, code: string, message: string, details?: unknown, options: { expose?: boolean } = {}) {
     super(message);
     this.name = "AppError";
     this.status = status;
     this.code = code;
     this.details = details;
-    this.expose = status < 500;
+    this.expose = options.expose ?? (status < 500 || status === 501 || status === 503);
   }
 }
 
@@ -67,6 +75,27 @@ export function fromSupabase(error: { message: string; code?: string; details?: 
       "SCHEMA_OUT_OF_DATE",
       "The database is missing a migration this version needs. Run the SQL files in " +
         "database/migrations from 008 onward, in order, then retry.",
+      { reason: error.message }
+    );
+  }
+  // The database never answered: DNS, a refused connection, a paused project.
+  // supabase-js reports these with no code and the fetch failure as the message.
+  if (!error.code && /fetch failed|network|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|EAI_AGAIN|socket|timeout/i.test(error.message ?? "")) {
+    return new AppError(
+      503,
+      "DB_UNREACHABLE",
+      "The API could not reach its database, so nothing was saved. Check that the Supabase project " +
+        "is running (free projects pause when idle) and that SUPABASE_URL is right, then retry.",
+      { reason: error.message }
+    );
+  }
+  // PostgREST refusing the service key: a rotated or mistyped SUPABASE_SERVICE_ROLE_KEY.
+  if (error.code === "PGRST301" || error.code === "401" || /invalid api key|jwt|no api key/i.test(error.message ?? "")) {
+    return new AppError(
+      503,
+      "DB_UNAUTHORISED",
+      "The database refused the API's credentials, so nothing was saved. Check SUPABASE_SERVICE_ROLE_KEY " +
+        "in backend/.env against Supabase → Settings → API, then restart the API.",
       { reason: error.message }
     );
   }

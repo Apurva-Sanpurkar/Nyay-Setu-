@@ -8,6 +8,7 @@ import { validate, safeText, uuid, latitude, longitude } from "../middleware/val
 import { requireAuth, requireRole } from "../middleware/auth";
 import { writeLimiter } from "../middleware/rateLimit";
 import { recordAction } from "../services/audit";
+import { ocrImage } from "../lib/ai";
 import { normalisePlate, plateShape } from "../lib/similarity";
 import { storeMedia } from "../services/smart/media.service";
 import {
@@ -144,10 +145,38 @@ router.post(
   writeLimiter,
   upload.single("image"),
   asyncRoute(async (req, res) => {
-    if (!capabilities.serverAnpr) {
+    if (!capabilities.serverAnpr && !capabilities.ai) {
       throw new AppError(501, "ANPR_ON_DEVICE", "Server-side plate recognition is not configured; the app reads the plate on this device.");
     }
     if (!req.file) throw badRequest("Attach the number plate photograph as `image`.");
+
+    // No commercial provider: the NyaySetu OCR service (ai-service/src/ocr.py)
+    // locates and reads the plate. If it is not running, the app still reads
+    // the plate on the device, exactly as when nothing is configured.
+    if (!capabilities.serverAnpr) {
+      let read;
+      try {
+        read = await ocrImage(req.file.buffer, "plate");
+      } catch (error) {
+        if (error instanceof AppError && error.code === "OCR_UNAVAILABLE") {
+          throw new AppError(501, "ANPR_ON_DEVICE", "The plate reader is not running; the app reads the plate on this device.");
+        }
+        throw error;
+      }
+      const candidates = (read.candidates ?? [])
+        .map((c) => ({ plate: normalisePlate(c.plate), score: Math.round(c.confidence * 1000) / 1000 }))
+        .filter((c) => Boolean(c.plate));
+      await recordAction(req, {
+        action: "vehicle.anpr",
+        detail: { provider: "nyaysetu-ocr", candidates: candidates.length, resultDigest: read.proof?.resultDigest ?? null },
+      });
+      return res.json({
+        provider: "server",
+        engine: "nyaysetu-ocr",
+        candidates: candidates.map((c) => ({ ...c, shape: plateShape(c.plate) })),
+        proof: read.proof ?? null,
+      });
+    }
     const form = new FormData();
     form.append("upload", new Blob([new Uint8Array(req.file.buffer)]), "plate.jpg");
     form.append("regions", "in");

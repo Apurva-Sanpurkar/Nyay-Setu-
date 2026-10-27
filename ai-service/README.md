@@ -87,10 +87,44 @@ Every API response carries `modelVersion`, which encodes `synthetic`, and `/meta
 | POST | `/predict/evidence-anomaly` | `{ anomaly, score, reasons[], modelSaysUnusual }` |
 | POST | `/predict/bail-risk` | `{ band, score, probabilities, factors[] }` |
 | POST | `/predict/case-delay` | `{ predictedDays, confidenceLow, confidenceHigh }` |
+| POST | `/ocr/document?lang=eng` | Image body → `{ text, confidence, variant, improvement, proof }` |
+| POST | `/ocr/plate` | Image body → `{ candidates[], confidence, proof }` |
 
 Requests and responses are camelCase, matching `backend/src/lib/ai.ts`. Set `AI_SERVICE_KEY` and the service requires it as an `X-AI-KEY` header, compared with `hmac.compare_digest` so the check does not leak the key by timing.
 
 A missing model artefact returns **503**, never a guess.
+
+The two `/ocr` routes take the raw image as the body (or a multipart `image` field). Send `X-Expected-SHA256` and the service refuses (409) to read bytes that are not that digest.
+
+---
+
+## OCR
+
+`src/ocr.py` reads text from photographed or scanned evidence (seizure memos, FIR copies, receipts, labels) and number plates. Phone photographs are tilted, shadowed and noisy, so each image is prepared before Tesseract sees it:
+
+- **Document:** EXIF orientation, greyscale, rescale to ~2400 px, deskew by projection profile, then four variants (raw, shadow-flattened + CLAHE, Otsu, denoised adaptive threshold) read as a page (psm 3). The best is read again as a block (psm 6). The winner is the read with the most confidence-weighted characters, so a variant that is sure of one word does not beat one that reads the whole memo. `raw` is always one of the candidates, so the prepared result is never worse than an unprepared one.
+- **Plate:** the plate is found (edges closed into blobs, filtered by plate aspect ratios). Up to three crops plus the whole frame are read as one line and as a block with a letters-and-digits whitelist, and each read is fitted to Indian formats with the same rules as the web app.
+
+**Proof.** Every result carries `inputSha256` (the bytes read), `preprocessedSha256` (the winning prepared image), the pipeline steps and parameters, the engine version, `textSha256`, and `resultDigest` over all of these in canonical JSON. The digest is the same encoding as `packages/integrity`, so the Node API recomputes it, refuses any mismatch, and anchors it on chain (`POST /api/evidence/:id/ocr`, migration 015). The same image through the same pipeline and engine version gives the same digest.
+
+```bash
+pip install -r requirements.txt
+# plus the Tesseract binary:
+#   Windows  UB Mannheim installer (github.com/UB-Mannheim/tesseract/wiki), or set TESSERACT_CMD
+#   Ubuntu   sudo apt install tesseract-ocr tesseract-ocr-hin tesseract-ocr-mar
+#   macOS    brew install tesseract tesseract-lang
+
+python ocr_evidence.py memo.jpg                          # text, confidence, proof
+python ocr_evidence.py memo.jpg --expect-sha256 0x…      # refuse unless these are the registered bytes
+python ocr_evidence.py car.jpg --mode plate
+python ocr_evidence.py memo.jpg --json > reading.json
+python ocr_evidence.py --verify reading.json             # recompute a saved reading's digest
+python ocr_evidence.py --benchmark samples/              # raw Tesseract vs the prepared pipeline
+
+python -m unittest discover -s tests                     # pipeline tests; no Tesseract needed
+```
+
+Without Tesseract the models still serve, `/health` reports `ocr.available: false` with the reason, and the `/ocr` routes answer 503 with what to install.
 
 ---
 

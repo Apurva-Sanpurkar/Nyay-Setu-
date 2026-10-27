@@ -231,9 +231,12 @@ export function CapturePage() {
       setRegistered(result);
       if (captured?.journalId) await journal.discard(captured.journalId).catch(() => undefined);
     } catch (caught) {
+      // A 5xx the API chose not to explain still says which failure it was and
+      // where the explanation is, rather than a bare "something went wrong".
+      const detail = caught instanceof ApiError && caught.status >= 500 && caught.code === "INTERNAL" ? ` (${caught.code} · HTTP ${caught.status} — the API log has the cause)` : "";
       setError(
         caught instanceof ManifestError || caught instanceof ApiError || caught instanceof Error
-          ? caught.message
+          ? caught.message + detail
           : t("common.error")
       );
     } finally {

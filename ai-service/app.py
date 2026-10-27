@@ -29,6 +29,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 
 from src.features import bail_factors, bail_vector, delay_vector, evidence_vector
+from src import ocr
 
 load_dotenv()
 
@@ -42,6 +43,13 @@ HOST = os.getenv("HOST", "127.0.0.1")
 ANOMALY_SCORE_THRESHOLD = float(os.getenv("ANOMALY_SCORE_THRESHOLD", "0.62"))
 
 app = Flask(__name__)
+# OCR takes an image body. 20 MB covers any phone photograph; the Node API
+# never sends more than its own upload limit.
+app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("OCR_MAX_BYTES", str(20 * 1024 * 1024)))
+
+# The OCR engine is optional: without Tesseract the models still serve, and the
+# /ocr routes answer 503 with what to install.
+ocr.configure_engine(os.getenv("TESSERACT_CMD") or None)
 
 # No CORS layer at all, deliberately.
 #
@@ -120,6 +128,7 @@ def health():
             "modelVersion": model_version(),
             "dataSource": _metadata.get("data_source", "unknown"),
             "error": _load_error,
+            "ocr": ocr.engine_status(),
         }
     ), (200 if not _load_error else 503)
 
@@ -235,6 +244,42 @@ def predict_case_delay():
             "modelVersion": model_version(),
         }
     )
+
+
+def image_body() -> bytes:
+    """The image as a raw body (what the Node API sends) or a multipart `image` field."""
+    upload = request.files.get("image")
+    return upload.read() if upload else request.get_data(cache=False)
+
+
+def ocr_response(read):  # noqa: ANN001
+    # x-expected-sha256: the registered digest of the evidence. The service
+    # refuses to read bytes that are not that evidence, so a result can never be
+    # attached to an item it was not derived from.
+    try:
+        return jsonify(read(image_body(), expected_sha256=request.headers.get("x-expected-sha256") or None))
+    except ocr.OcrError as error:
+        return jsonify({"error": error.code, "message": error.message}), error.status
+
+
+@app.post("/ocr/document")
+def ocr_document():
+    """Text from a photographed or scanned document: memo, FIR copy, receipt, label."""
+    lang = request.args.get("lang", "eng")
+    if not lang.replace("+", "").isalpha() or len(lang) > 40:
+        return jsonify({"error": "BAD_LANG", "message": "lang is Tesseract language codes, e.g. eng or eng+hin+mar."}), 400
+    return ocr_response(lambda data, expected_sha256: ocr.read_document(data, lang=lang, expected_sha256=expected_sha256))
+
+
+@app.post("/ocr/plate")
+def ocr_plate():
+    """An Indian registration number from a vehicle photograph."""
+    return ocr_response(lambda data, expected_sha256: ocr.read_plate(data, expected_sha256=expected_sha256))
+
+
+@app.errorhandler(413)
+def too_large(error):  # noqa: ANN001, ARG001
+    return jsonify({"error": "TOO_LARGE", "message": "The image is larger than this service accepts."}), 413
 
 
 @app.errorhandler(400)

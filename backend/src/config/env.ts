@@ -131,6 +131,9 @@ const schema = z.object({
   AI_SERVICE_URL: optionalString,
   AI_SERVICE_KEY: optionalString,
   AI_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
+  // Evidence OCR runs several prepared variants of a full-page photograph
+  // through Tesseract, which takes seconds rather than milliseconds.
+  OCR_TIMEOUT_MS: z.coerce.number().int().positive().default(90_000),
 
   // ---------------------------------------------------- smart policing (014)
   // Server-side number plate recognition (platerecognizer.com). Optional: with

@@ -78,6 +78,7 @@ const MIGRATION_PROBES: [migration: string, table: string][] = [
   ["011_chunked_uploads", "upload_sessions"],
   ["012_workflows", "approval_requests"],
   ["014_smart_policing", "vehicle_reports"],
+  ["015_evidence_ocr", "evidence_ocr"],
 ];
 
 export async function schemaStatus(): Promise<{ upToDate: boolean; missing: string[] }> {

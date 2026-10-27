@@ -1,7 +1,7 @@
 import { Request, Router } from "express";
 import multer from "multer";
 import { z } from "zod";
-import { env } from "../config/env";
+import { env, capabilities } from "../config/env";
 import { badRequest, notFound } from "../lib/errors";
 import { asyncRoute } from "../middleware/error";
 import { validate, hash32, uuid, latitude, longitude, safeText } from "../middleware/validate";
@@ -25,6 +25,7 @@ import {
 import { anchorHistory, loadAnchor, recheck } from "../services/verification/anchors";
 import { parseManifestField, parseSignatureField } from "../services/capture.service";
 import { assembleUpload, consumeUpload } from "../services/upload.service";
+import { canOcr, listEvidenceOcr, runEvidenceOcr } from "../services/ocr.service";
 
 const witnessSchema = z
   .array(z.object({ name: z.string().trim().min(2).max(120), description: z.string().trim().max(200).optional() }))
@@ -575,6 +576,40 @@ router.get(
         .limit(100)
     );
     res.json({ checks });
+  })
+);
+
+/**
+ * OCR (015): read the text in a photographed or scanned item. The reading is
+ * stored with its proof and its digest anchored; see services/ocr.service.ts.
+ * The defence and the accused see readings but do not create them, as with
+ * every other derived record on an item.
+ */
+router.post(
+  "/:id/ocr",
+  requireRole("police", "forensic_lab", "prosecutor", "judge"),
+  writeLimiter,
+  validate(z.object({ id: uuid }), "params"),
+  validate(
+    z
+      .object({ lang: z.string().regex(/^[a-z_]{3,10}(\+[a-z_]{3,10}){0,4}$/, "lang is Tesseract codes, e.g. eng or eng+hin+mar").optional() })
+      .strict()
+  ),
+  asyncRoute(async (req, res) => {
+    const item = await loadEvidence(req.params.id);
+    await assertCaseAccess(req, item.case_id);
+    const result = await runEvidenceOcr(req, req.user!, item.id, { lang: req.body?.lang });
+    res.status(result.replayed ? 200 : 201).json(result);
+  })
+);
+
+router.get(
+  "/:id/ocr",
+  validate(z.object({ id: uuid }), "params"),
+  asyncRoute(async (req, res) => {
+    const item = await loadEvidence(req.params.id);
+    await assertCaseAccess(req, item.case_id);
+    res.json({ readings: await listEvidenceOcr(item.id), available: canOcr(item) && capabilities.ai });
   })
 );
 

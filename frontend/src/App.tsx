@@ -5,6 +5,7 @@ import { ROLE_HOME } from "./lib/format";
 import type { Role } from "./lib/api";
 import { PortalShell } from "./components/PortalShell";
 import { ApiUnreachable } from "./components/ApiUnreachable";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LinkButton, Spinner } from "./components/ui";
 import { LogoMark } from "./components/Logo";
 
@@ -121,7 +122,9 @@ function Guard({ roles, children }: { roles?: Role[]; children: React.ReactNode 
 
   return (
     <PortalShell>
-      <Suspense fallback={<PageSpinner />}>{children}</Suspense>
+      <ErrorBoundary resetKey={location.pathname}>
+        <Suspense fallback={<PageSpinner />}>{children}</Suspense>
+      </ErrorBoundary>
     </PortalShell>
   );
 }

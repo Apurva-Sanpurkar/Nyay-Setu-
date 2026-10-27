@@ -15,6 +15,14 @@ pandas>=2.2
 joblib>=1.4
 python-dotenv>=1.0
 
+# Evidence OCR (src/ocr.py). pytesseract drives the Tesseract binary, which is
+# installed separately: see README "OCR". Without it the models still serve and
+# the /ocr routes answer 503. The headless OpenCV build has no GUI libraries, so
+# it installs on servers and containers as well.
+opencv-python-headless>=4.9
+pillow>=10.3
+pytesseract>=0.3.10
+
 # Production WSGI server. waitress rather than gunicorn because it runs on
 # Windows as well as Linux, so the deploy command is the same everywhere.
 waitress>=3.0

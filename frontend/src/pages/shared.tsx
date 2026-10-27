@@ -56,7 +56,7 @@ import { FileHashPicker, type HashedFile } from "../components/capture";
 import { CaseReportPanel } from "../components/CaseReport";
 import { CaseProgress } from "../components/CaseProgress";
 import { CasePredictions } from "../components/CasePredictions";
-import { EvidenceVerificationCard, PassportCard } from "../components/evidencePanels";
+import { EvidenceVerificationCard, OcrCard, PassportCard } from "../components/evidencePanels";
 import { DocumentsCard, GovernanceCard, LabWorkPanel } from "../components/workflowPanels";
 import { VerificationBadge } from "../components/verification";
 import { FirCard } from "../components/casePanels";
@@ -758,6 +758,7 @@ export function EvidenceDetailPage() {
 
               {item && <DocumentsCard item={item} />}
               {item && <GovernanceCard item={item} onChanged={() => state.refetch()} />}
+              {item && <OcrCard evidenceId={item.id} />}
             </div>
 
             <div className="space-y-5">

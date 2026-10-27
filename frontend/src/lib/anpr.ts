@@ -82,7 +82,11 @@ export function plateCandidatesFromText(raw: string, ocrConfidence = 0.7): Plate
     for (let start = 0; start + template.length <= clean.length; start++) {
       const fitted = coerce(clean.slice(start, start + template.length), template);
       if (!fitted || !isValidPlate(fitted.text)) continue;
-      const confidence = Math.max(0, Math.min(1, ocrConfidence - fitted.corrections * 0.08));
+      // Characters left unused count against a format, so a shorter one that
+      // needs fewer corrections ("MH12A8123" out of "MHI2A8I234") does not beat
+      // the reading that accounts for the whole plate. Same rule as ai-service/src/ocr.py.
+      const unused = Math.min(3, clean.length - template.length);
+      const confidence = Math.max(0, Math.min(1, ocrConfidence - fitted.corrections * 0.08 - unused * 0.1));
       const prior = found.get(fitted.text);
       if (!prior || prior.confidence < confidence) found.set(fitted.text, { plate: fitted.text, confidence, valid: true, corrections: fitted.corrections });
     }

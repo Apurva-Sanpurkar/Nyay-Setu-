@@ -31,8 +31,8 @@ export function errorHandler(error: unknown, req: Request, res: Response, _next:
     return res.status(error.status).json({
       error: {
         code: error.code,
-        message: error.expose ? error.message : "Something went wrong. Please try again.",
-        ...(error.expose && error.details !== undefined ? { details: error.details } : {}),
+        message: error.expose ? safeMessage(error) : "Something went wrong. Please try again.",
+        ...(error.expose && error.status < 500 && error.details !== undefined ? { details: error.details } : {}),
       },
     });
   }
@@ -60,6 +60,15 @@ export function errorHandler(error: unknown, req: Request, res: Response, _next:
   return res.status(500).json({
     error: { code: "INTERNAL", message: "Something went wrong. Please try again." },
   });
+}
+
+/**
+ * A 5xx message can quote an upstream error, and an RPC or storage URL often
+ * carries its API key in the path (Alchemy, Infura). URLs are cut out before
+ * such a message leaves; the log keeps the original.
+ */
+function safeMessage(error: AppError): string {
+  return error.status < 500 ? error.message : error.message.replace(/\b(?:https?|wss?):\/\/\S+/gi, "[address hidden]");
 }
 
 /** Lets route handlers be plain async functions without try/catch noise. */

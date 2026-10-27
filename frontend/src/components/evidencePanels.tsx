@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Download, ExternalLink, FileJson, MapPin, QrCode, ShieldAlert, Smartphone, Upload } from "lucide-react";
+import { Download, ExternalLink, FileJson, MapPin, QrCode, ScanText, ShieldAlert, Smartphone, Upload } from "lucide-react";
 import { useQuery } from "../lib/useApi";
 import { api, apiOrigin, ApiError, type CaptureDetail, type PublicPassport, type StateHistoryRow, type Verification } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -7,7 +8,7 @@ import { useToast } from "../context/ToastContext";
 import { useI18n } from "../i18n";
 import { formatDateTime, osmLink } from "../lib/format";
 import { Button, Card, CopyButton } from "./ui";
-import { VerificationPanel } from "./verification";
+import { VerificationBadge, VerificationPanel } from "./verification";
 import { ErrorState, Loading } from "./DataState";
 
 /**
@@ -206,5 +207,131 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
       <dt className="text-2xs uppercase tracking-wider text-faint">{label}</dt>
       <dd className="mt-0.5 text-text">{value}</dd>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ OCR */
+
+interface OcrReading {
+  id: string;
+  text: string;
+  confidence: number;
+  variant: string;
+  psm: number;
+  lang: string;
+  improvement: { rawConfidence: number; bestConfidence: number; rawChars: number; bestChars: number } | null;
+  durationMs: number | null;
+  resultDigest: string;
+  proof: { inputSha256: string; preprocessedSha256: string; textSha256: string; engine: { name: string; version: string } };
+  createdAt: string;
+  verification: Verification;
+}
+
+const OCR_ROLES = new Set(["police", "forensic_lab", "prosecutor", "judge"]);
+
+/**
+ * Text read from a photographed or scanned item (015). The reading is a
+ * searchable copy, not a replacement: the proof shows it was derived from the
+ * registered file by a named pipeline, and its digest is anchored like any
+ * other document on the case.
+ */
+export function OcrCard({ evidenceId }: { evidenceId: string }) {
+  const { user } = useAuth();
+  const toast = useToast();
+  const state = useQuery<{ readings: OcrReading[]; available: boolean }>(`/api/evidence/${evidenceId}/ocr`);
+  const [lang, setLang] = useState("eng");
+  const [busy, setBusy] = useState(false);
+
+  if (state.loading && !state.data) return <Card title="Text in this item (OCR)"><Loading rows={2} /></Card>;
+  if (state.error && !state.data) {
+    return (
+      <Card title="Text in this item (OCR)">
+        <ErrorState error={state.error} onRetry={state.refetch} context="OCR readings" />
+      </Card>
+    );
+  }
+  if (!state.data || (!state.data.available && state.data.readings.length === 0)) return null;
+
+  const canRead = Boolean(user && OCR_ROLES.has(user.role)) && state.data.available;
+  const latest = state.data.readings[0] ?? null;
+
+  const read = async () => {
+    setBusy(true);
+    try {
+      await api.post(`/api/evidence/${evidenceId}/ocr`, { lang });
+      state.refetch();
+    } catch (caught) {
+      toast.error("Could not read the text", caught instanceof ApiError ? caught.message : undefined);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card
+      title="Text in this item (OCR)"
+      subtitle="Read from the registered file after shadow removal, deskewing and thresholding. A reading aid: the image itself is the evidence."
+      actions={
+        canRead ? (
+          <div className="flex items-center gap-2">
+            <select
+              aria-label="OCR language"
+              value={lang}
+              onChange={(event) => setLang(event.target.value)}
+              className="h-8 rounded-lg border border-border bg-surface px-2 font-ui text-2xs text-text"
+            >
+              <option value="eng">English</option>
+              <option value="eng+hin">English + Hindi</option>
+              <option value="eng+mar">English + Marathi</option>
+            </select>
+            <Button size="sm" variant="secondary" icon={<ScanText size={12} />} loading={busy} onClick={() => void read()}>
+              {latest ? "Read again" : "Extract text"}
+            </Button>
+          </div>
+        ) : undefined
+      }
+    >
+      {!latest ? (
+        <p className="font-ui text-xs text-muted">No reading yet.</p>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2 font-ui text-2xs text-muted">
+            <VerificationBadge state={latest.verification.state} short />
+            <span>{Math.round(latest.confidence * 100)}% confidence</span>
+            {latest.improvement && latest.improvement.rawConfidence < latest.improvement.bestConfidence && (
+              <span>
+                (unprocessed: {Math.round(latest.improvement.rawConfidence * 100)}%)
+              </span>
+            )}
+            <span>· {latest.variant}, psm {latest.psm} · {latest.proof.engine.name} {latest.proof.engine.version}</span>
+            <span>· {formatDateTime(latest.createdAt)}</span>
+          </div>
+          <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-border bg-surface-2 p-3 font-mono text-xs leading-relaxed text-text">
+            {latest.text || "(no text found)"}
+          </pre>
+          <div className="flex justify-end">
+            <CopyButton value={latest.text} label="Copy text" />
+          </div>
+          <dl className="space-y-1.5 border-t border-border pt-3">
+            {(
+              [
+                ["Read from (registered file)", latest.proof.inputSha256],
+                ["Prepared image", latest.proof.preprocessedSha256],
+                ["Text", latest.proof.textSha256],
+                ["Reading digest (anchored)", latest.resultDigest],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label}>
+                <dt className="font-ui text-2xs font-semibold uppercase tracking-wider text-faint">{label}</dt>
+                <dd className="hash text-2xs text-text">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          {state.data.readings.length > 1 && (
+            <p className="font-ui text-2xs text-faint">{state.data.readings.length - 1} earlier reading(s) kept on record.</p>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }

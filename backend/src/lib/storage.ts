@@ -60,19 +60,44 @@ async function pinToPinata(blob: EncryptedBlob, fileName: string): Promise<strin
     })
   );
 
-  const response = await fetch(PINATA_PIN_URL, {
-    method: "POST",
-    headers: pinataHeaders(),
-    body: form,
-  });
+  let response: Response;
+  try {
+    response = await fetch(PINATA_PIN_URL, {
+      method: "POST",
+      headers: pinataHeaders(),
+      body: form,
+    });
+  } catch (error) {
+    logger.error("Pinata unreachable", { reason: error instanceof Error ? error.message : String(error) });
+    throw new AppError(
+      502,
+      "IPFS_UNREACHABLE",
+      "The evidence store (Pinata) could not be reached, so nothing was registered. Check the API's internet connection and retry.",
+      undefined,
+      { expose: true }
+    );
+  }
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw new AppError(502, "IPFS_ERROR", `Pinata rejected the upload (${response.status}).`, body.slice(0, 300));
+    logger.error("Pinata rejected an upload", { status: response.status, body: body.slice(0, 300) });
+    const hint =
+      response.status === 401 || response.status === 403
+        ? "Its credentials were refused: check PINATA_JWT in backend/.env."
+        : response.status === 429
+          ? "Its rate limit or plan quota was reached."
+          : "Retry shortly.";
+    throw new AppError(
+      502,
+      "IPFS_ERROR",
+      `The evidence store (Pinata) refused the file (${response.status}), so nothing was registered. ${hint}`,
+      undefined,
+      { expose: true }
+    );
   }
 
   const json = (await response.json()) as { IpfsHash?: string };
-  if (!json.IpfsHash) throw new AppError(502, "IPFS_ERROR", "Pinata returned no CID.");
+  if (!json.IpfsHash) throw new AppError(502, "IPFS_ERROR", "Pinata returned no CID.", undefined, { expose: true });
   return json.IpfsHash;
 }
 
